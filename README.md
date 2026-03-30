@@ -243,19 +243,6 @@ docker-compose up --build
 | `GET` | `/api/interview/question` | Returns a contextual question with audio | Yes |
 | `POST` | `/api/interview/evaluate` | Evaluates given candidate answer | Yes |
 
----
-
-## 📸 Screenshots / Demo
-
-<div align="center">
-  <img src="https://drive.google.com/file/d/1uPLjcny7TcEuRq9G9-tLGngA0lwoVAFO/view?usp=sharing" alt="Dashboard Screenshot" />
-  <p><em>Candidate Performance Dashboard</em></p>
-  
-  <img src="https://drive.google.com/file/d/1AA1QLXkYfl6mA_yZN2KeCRve2NwvOa09/view?usp=sharing" alt="Interview Flow" />
-  <p><em>Active Interview Flow</em></p>
-</div>
-
----
 
 ## ☁️ Deployment Guide
 
