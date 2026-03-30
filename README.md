@@ -248,10 +248,10 @@ docker-compose up --build
 ## 📸 Screenshots / Demo
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Dashboard+View" alt="Dashboard Screenshot" />
+  <img src="https://drive.google.com/file/d/1uPLjcny7TcEuRq9G9-tLGngA0lwoVAFO/view?usp=sharing" alt="Dashboard Screenshot" />
   <p><em>Candidate Performance Dashboard</em></p>
   
-  <img src="https://via.placeholder.com/800x400.png?text=Active+Interview+Simulation" alt="Interview Flow" />
+  <img src="https://drive.google.com/file/d/1AA1QLXkYfl6mA_yZN2KeCRve2NwvOa09/view?usp=sharing" alt="Interview Flow" />
   <p><em>Active Interview Flow</em></p>
 </div>
 
