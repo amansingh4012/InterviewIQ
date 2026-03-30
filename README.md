@@ -291,7 +291,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📫 Contact / Author
 **Your Name**  
-* GitHub: [@YourUsername](https://github.com/amansingh4012)
+* GitHub: [@amansingh4012](https://github.com/amansingh4012)
 * LinkedIn: [Aman Kumar Singh](https://www.linkedin.com/in/aman-kumar-singh-806176251/)
 * Email: amansingh.as9170@gmail.com
 
