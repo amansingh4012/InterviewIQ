@@ -291,8 +291,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📫 Contact / Author
 **Your Name**  
-* GitHub: [@YourUsername](https://github.com/YourUsername)
-* LinkedIn: [Your/Name](https://linkedin.com/in/yourprofile)
-* Email: you@example.com
+* GitHub: [@YourUsername](https://github.com/amansingh4012)
+* LinkedIn: [Aman Kumar Singh](https://www.linkedin.com/in/aman-kumar-singh-806176251/)
+* Email: amansingh.as9170@gmail.com
 
 <p align="right"><a href="#top">⬆️ Back to Top</a></p>
