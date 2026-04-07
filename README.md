@@ -243,19 +243,6 @@ docker-compose up --build
 | `GET` | `/api/interview/question` | Returns a contextual question with audio | Yes |
 | `POST` | `/api/interview/evaluate` | Evaluates given candidate answer | Yes |
 
----
-
-## 📸 Screenshots / Demo
-
-<div align="center">
-  <img src="https://via.placeholder.com/800x400.png?text=Dashboard+View" alt="Dashboard Screenshot" />
-  <p><em>Candidate Performance Dashboard</em></p>
-  
-  <img src="https://via.placeholder.com/800x400.png?text=Active+Interview+Simulation" alt="Interview Flow" />
-  <p><em>Active Interview Flow</em></p>
-</div>
-
----
 
 ## ☁️ Deployment Guide
 
@@ -331,8 +318,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📫 Contact / Author
 **Your Name**  
-* GitHub: [@YourUsername](https://github.com/YourUsername)
-* LinkedIn: [Your/Name](https://linkedin.com/in/yourprofile)
-* Email: you@example.com
+* GitHub: [@amansingh4012](https://github.com/amansingh4012)
+* LinkedIn: [Aman Kumar Singh](https://www.linkedin.com/in/aman-kumar-singh-806176251/)
+* Email: amansingh.as9170@gmail.com
 
 <p align="right"><a href="#top">⬆️ Back to Top</a></p>
