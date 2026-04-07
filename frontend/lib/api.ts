@@ -1,9 +1,10 @@
 // Validate API URL configuration
 const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const isDevelopment = process.env.NODE_ENV === 'development';
+const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV === 'production';
 
-// Security: Enforce HTTPS in production
-if (!isDevelopment && !rawApiUrl.startsWith('https://')) {
+// Security: Enforce HTTPS in production (skip during build time for SSG)
+if (!isDevelopment && !isBuildTime && !rawApiUrl.startsWith('https://')) {
   console.error('Security Error: API_URL must use HTTPS in production');
   throw new Error('Invalid API configuration');
 }

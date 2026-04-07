@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, useUser, UserButton } from '@clerk/nextjs';
 import { getUserSessions } from '@/lib/api';
@@ -16,7 +16,7 @@ interface SubscriptionStatus {
   upgrade_prompt?: string;
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
@@ -146,7 +146,7 @@ export default function Dashboard() {
             <Button 
               onClick={handleStartInterview} 
               className="shrink-0"
-              disabled={subscription && !subscription.can_start}
+              disabled={subscription ? !subscription.can_start : undefined}
             >
               🚀 Start New Interview
             </Button>
@@ -255,5 +255,17 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-2 border-[var(--accent-indigo)] border-t-transparent animate-spin" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
