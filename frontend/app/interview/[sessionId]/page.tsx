@@ -38,6 +38,7 @@ export default function InterviewSession({ params }: { params: Promise<{ session
   const [lastScore, setLastScore] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isRecovering, setIsRecovering] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
 
   // Session recovery: if Zustand state is empty (page refresh), fetch from API
   useEffect(() => {
@@ -109,6 +110,7 @@ export default function InterviewSession({ params }: { params: Promise<{ session
         setCurrentQuestion(data.question);
         setQuestionNumber(data.question_number);
         setLastScore(data.evaluation_preview?.score || null);
+        setIsAudioLoading(true);
         setIsAudioPlaying(true);
       }
     } catch (error: any) {
@@ -225,6 +227,7 @@ export default function InterviewSession({ params }: { params: Promise<{ session
             question={currentQuestion}
             questionNumber={questionNumber}
             isLoading={isLoading}
+            isAudioLoading={isAudioLoading}
           />
 
           {/* Last Score Flash */}
@@ -283,7 +286,11 @@ export default function InterviewSession({ params }: { params: Promise<{ session
         <AudioPlayer
           text={currentQuestion}
           autoPlay={isAudioPlaying}
-          onComplete={() => setIsAudioPlaying(false)}
+          onAudioReady={() => setIsAudioLoading(false)}
+          onComplete={() => {
+            setIsAudioPlaying(false);
+            setIsAudioLoading(false);
+          }}
         />
       )}
     </div>

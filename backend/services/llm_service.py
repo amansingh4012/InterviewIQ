@@ -12,7 +12,7 @@ class LLMService:
     def _get_model(self, temperature: float = 0.7):
         return ChatGroq(
             api_key=settings.groq_api_key,
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             temperature=temperature
         )
 
@@ -115,12 +115,19 @@ class LLMService:
             f"Q{i+1}: {item['question']}\nA: {item['answer']}\nQuality: {item.get('quality', 'N/A')}"
             for i, item in enumerate(conversation_history)
         ])
+        
+        # Build list of previously asked questions for deduplication
+        questions_asked_list = "\n".join([
+            f"- Q{i+1}: {item['question']}"
+            for i, item in enumerate(conversation_history)
+        ])
 
         prompt = NEXT_QUESTION_PROMPT.format(
             parsed_resume=json.dumps(parsed_resume, indent=2),
             role=role,
             strategy=json.dumps(strategy, indent=2),
             conversation_history=history_text,
+            questions_asked_list=questions_asked_list,
             last_answer_quality=last_evaluation.get("answer_quality", "acceptable"),
             last_answer_gap=last_evaluation.get("what_they_missed", ""),
             questions_asked=questions_asked,

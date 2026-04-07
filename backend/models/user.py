@@ -1,6 +1,22 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from enum import Enum
+
+
+class SubscriptionTier(str, Enum):
+    FREE = "free"
+    PREMIUM = "premium"
+    ENTERPRISE = "enterprise"
+
+
+class SubscriptionStatus(BaseModel):
+    user_id: str
+    tier: SubscriptionTier
+    can_start_interview: bool
+    interviews_remaining: Optional[int] = None
+    reason: Optional[str] = None
+    upgrade_prompt: Optional[str] = None
 
 
 class UserProfile(BaseModel):

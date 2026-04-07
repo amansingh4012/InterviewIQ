@@ -19,13 +19,11 @@ class SarvamService:
         payload = {
             "inputs": [text],
             "target_language_code": "hi-IN",
-            "speaker": "meera",
-            "pitch": 0,
-            "pace": 1.0,
-            "loudness": 1.5,
+            "speaker": "neha",
+            "pace": 1.25,
             "speech_sample_rate": 24000, 
             "enable_preprocessing": True,
-            "model": "aura-tts-ph-1"
+            "model": "bulbul:v3"
         }
         
         async with httpx.AsyncClient(timeout=30.0) as client:

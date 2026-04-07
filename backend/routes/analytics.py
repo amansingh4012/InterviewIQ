@@ -1,22 +1,35 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from auth import verify_clerk_token
 from database import sessions_collection
 from services.analytics_service import analytics_service
 from services.llm_service import llm_service
 from prompts.progress_analyzer import PROGRESS_ANALYZER_PROMPT
 import json
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# Pagination limits
+MAX_SESSIONS_PER_REQUEST = 100
+DEFAULT_SESSIONS_LIMIT = 50
 
 
 @router.get("/progress")
-async def get_progress(user_id: str = Depends(verify_clerk_token)):
+async def get_progress(
+    user_id: str = Depends(verify_clerk_token),
+    limit: int = Query(default=DEFAULT_SESSIONS_LIMIT, ge=1, le=MAX_SESSIONS_PER_REQUEST),
+    skip: int = Query(default=0, ge=0)
+):
+    """Get progress analytics with pagination support."""
+    
+    # Query with pagination and limit to prevent memory issues
     cursor = sessions_collection.find(
         {"user_id": user_id, "status": "completed"}
-    ).sort("created_at", 1)
+    ).sort("created_at", -1).skip(skip).limit(limit)  # Sort newest first with limit
 
     all_sessions = []
-    session_number = 1
+    session_number = skip + 1
     async for session in cursor:
         all_sessions.append({
             "session_number": session_number,
@@ -28,10 +41,21 @@ async def get_progress(user_id: str = Depends(verify_clerk_token)):
         })
         session_number += 1
 
+    # Get total count for pagination info
+    total_count = await sessions_collection.count_documents(
+        {"user_id": user_id, "status": "completed"}
+    )
+
     if len(all_sessions) < 2:
         return {
             "message": "Complete at least 2 interviews to see progress analytics",
-            "sessions_completed": len(all_sessions)
+            "sessions_completed": total_count,
+            "pagination": {
+                "total": total_count,
+                "limit": limit,
+                "skip": skip,
+                "has_more": total_count > skip + limit
+            }
         }
 
     multi_analytics = analytics_service.analyze_multi_session_progress(all_sessions)
@@ -64,6 +88,7 @@ async def get_progress(user_id: str = Depends(verify_clerk_token)):
             prompt_template=PROGRESS_ANALYZER_PROMPT,
         )
     except Exception as e:
+        logger.error(f"AI insights generation failed: {type(e).__name__}")
         # Graceful fallback — AI insights are optional
         ai_insights = {
             "overall_trajectory": multi_analytics.get("trajectory", "insufficient_data"),
@@ -81,7 +106,13 @@ async def get_progress(user_id: str = Depends(verify_clerk_token)):
         }
 
     return {
-        "sessions_completed": len(all_sessions),
+        "sessions_completed": total_count,
         "analytics": multi_analytics,
         "ai_insights": ai_insights,
+        "pagination": {
+            "total": total_count,
+            "limit": limit,
+            "skip": skip,
+            "has_more": total_count > skip + limit
+        }
     }
