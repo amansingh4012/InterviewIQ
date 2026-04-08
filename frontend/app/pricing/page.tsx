@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 
 interface Plan {
   id: string;
@@ -39,7 +40,7 @@ function PricingPageContent() {
 
   const fetchPlans = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/plans`);
+      const response = await fetch(`${API_URL}/subscription/plans`);
       if (response.ok) {
         const data = await response.json();
         setPlans(data.plans);
@@ -54,7 +55,7 @@ function PricingPageContent() {
   const fetchCurrentSubscription = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/status`, {
+      const response = await fetch(`${API_URL}/subscription/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -81,7 +82,7 @@ function PricingPageContent() {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/create-checkout-session`, {
+      const response = await fetch(`${API_URL}/subscription/create-checkout-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,8 +98,20 @@ function PricingPageContent() {
 
       const data = await response.json();
       
+      // SECURITY: Validate checkout URL before redirect (prevent open redirect)
       if (data.checkout_url) {
-        window.location.href = data.checkout_url;
+        try {
+          const url = new URL(data.checkout_url);
+          const allowedHosts = ['checkout.stripe.com', 'api.razorpay.com', 'rzp.io'];
+          if (allowedHosts.some(host => url.hostname.endsWith(host)) && url.protocol === 'https:') {
+            window.location.href = data.checkout_url;
+          } else {
+            throw new Error('Invalid checkout URL');
+          }
+        } catch {
+          setError('Invalid payment URL received. Please try again or contact support.');
+          setCheckoutLoading(null);
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');

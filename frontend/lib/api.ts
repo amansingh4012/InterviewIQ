@@ -1,15 +1,16 @@
 // Validate API URL configuration
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV === 'production';
 
 // Security: Enforce HTTPS in production (skip during build time for SSG)
-if (!isDevelopment && !isBuildTime && !rawApiUrl.startsWith('https://')) {
-  console.error('Security Error: API_URL must use HTTPS in production');
+// Allow relative URLs starting with '/' which inherently use the same protocol as the host
+if (!isDevelopment && !isBuildTime && !rawApiUrl.startsWith('https://') && !rawApiUrl.startsWith('/')) {
+  console.error('Security Error: API_URL must use HTTPS in production (or be a relative path)');
   throw new Error('Invalid API configuration');
 }
 
-const API_URL = rawApiUrl;
+export const API_URL = rawApiUrl;
 
 type FetchOptions = {
   method?: string;

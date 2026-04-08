@@ -53,8 +53,10 @@ export default function InterviewSession({ params }: { params: Promise<{ session
         const data = await getActiveSession(sessionId, () => getTokenRef.current());
 
         if (data.status === 'completed') {
-          // Session already finished — redirect to report
-          router.replace(data.redirect_to || `/interview/report/${sessionId}`);
+          // SECURITY: Validate redirect URL before navigation
+          const redirectTo = data.redirect_to || `/interview/report/${sessionId}`;
+          const isValidRedirect = redirectTo.startsWith('/interview/') || redirectTo.startsWith('/dashboard');
+          router.replace(isValidRedirect ? redirectTo : `/interview/report/${sessionId}`);
           return;
         }
 
@@ -64,7 +66,6 @@ export default function InterviewSession({ params }: { params: Promise<{ session
 
         // Restore conversation history by replacing (not appending) to prevent duplication
         if (data.conversation && data.conversation.length > 0) {
-          const store = useInterviewStore.getState();
           // Clear existing history and set restored entries at once
           useInterviewStore.setState({
             conversationHistory: data.conversation.map((entry: any) => ({
@@ -105,7 +106,10 @@ export default function InterviewSession({ params }: { params: Promise<{ session
       });
 
       if (data.status === 'complete') {
-        router.push(data.redirect_to || `/interview/report/${sessionId}`);
+        // SECURITY: Validate redirect URL before navigation
+        const redirectTo = data.redirect_to || `/interview/report/${sessionId}`;
+        const isValidRedirect = redirectTo.startsWith('/interview/') || redirectTo.startsWith('/dashboard');
+        router.push(isValidRedirect ? redirectTo : `/interview/report/${sessionId}`);
       } else {
         setCurrentQuestion(data.question);
         setQuestionNumber(data.question_number);

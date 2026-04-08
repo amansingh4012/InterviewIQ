@@ -20,10 +20,11 @@ security_logger = logging.getLogger("security")
 
 # Rate limiter configuration
 # Uses client IP for rate limiting key
+# NOTE: In production with multiple workers, use Redis: storage_uri="redis://host:6379"
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["100/minute"],  # Default limit for all endpoints
-    storage_uri="memory://",  # Use in-memory storage (use Redis in production for multiple workers)
+    default_limits=["60/minute"],  # Stricter default limit
+    storage_uri="memory://",  # Use Redis (e.g., "redis://localhost:6379") in production for distributed rate limiting
 )
 
 

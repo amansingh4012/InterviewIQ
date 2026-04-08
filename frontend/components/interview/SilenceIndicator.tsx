@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface SilenceIndicatorProps {
   isActive: boolean;
@@ -15,6 +15,9 @@ export default function SilenceIndicator({
   totalSeconds = 3 
 }: SilenceIndicatorProps) {
   const [progress, setProgress] = useState(100);
+  // Use ref to avoid stale closure issues with onTimeout
+  const onTimeoutRef = useRef(onTimeout);
+  onTimeoutRef.current = onTimeout;
 
   useEffect(() => {
     if (!isActive) {
@@ -25,9 +28,9 @@ export default function SilenceIndicator({
     setProgress((secondsRemaining / totalSeconds) * 100);
     
     if (secondsRemaining <= 0) {
-      onTimeout();
+      onTimeoutRef.current();
     }
-  }, [isActive, secondsRemaining, totalSeconds, onTimeout]);
+  }, [isActive, secondsRemaining, totalSeconds]);
 
   if (!isActive || secondsRemaining >= totalSeconds) {
     return null;

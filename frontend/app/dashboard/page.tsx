@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, useUser, UserButton } from '@clerk/nextjs';
-import { getUserSessions } from '@/lib/api';
+import { getUserSessions, canStartInterview } from '@/lib/api';
 import SessionCard from '@/components/dashboard/SessionCard';
 import Button from '@/components/ui/Button';
 import { formatScore } from '@/lib/utils';
@@ -25,6 +25,7 @@ function DashboardContent() {
   getTokenRef.current = getToken;
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   
   // Check for payment success
@@ -33,6 +34,7 @@ function DashboardContent() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setError(null);
       try {
         const [sessionsData, subStatus] = await Promise.all([
           getUserSessions(() => getTokenRef.current()),
@@ -40,8 +42,9 @@ function DashboardContent() {
         ]);
         setSessions(sessionsData.sessions || []);
         setSubscription(subStatus);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        setError(err.message || 'Failed to load dashboard data. Please refresh the page.');
       } finally {
         setLoading(false);
       }
@@ -51,13 +54,7 @@ function DashboardContent() {
 
   const fetchSubscriptionStatus = async (): Promise<SubscriptionStatus | null> => {
     try {
-      const token = await getTokenRef.current();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/can-start`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        return await response.json();
-      }
+      return await canStartInterview(() => getTokenRef.current());
     } catch (err) {
       console.error('Failed to fetch subscription:', err);
     }
@@ -99,6 +96,24 @@ function DashboardContent() {
       <div className="gradient-orb gradient-orb-2" style={{ opacity: 0.1 }} />
 
       <div className="max-w-6xl mx-auto relative z-10 space-y-8">
+        {/* Error Banner */}
+        {error && (
+          <div className="glass-card-static p-4 bg-red-50 border-red-200 animate-fade-up">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-800">
+                <span className="text-xl">⚠️</span>
+                <span>{error}</span>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-600 hover:text-red-800"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Payment Success Banner */}
         {paymentSuccess && (
           <div className="glass-card-static p-4 bg-green-50 border-green-200 animate-fade-up">

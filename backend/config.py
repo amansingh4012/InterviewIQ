@@ -77,15 +77,20 @@ class Settings(BaseSettings):
         """Runtime validation for production requirements."""
         if self.is_production:
             errors = []
+            warnings_list = []
             
             if not self.frontend_url.startswith("https://"):
                 errors.append("frontend_url must use HTTPS in production")
             
-            if not self.stripe_webhook_secret:
-                logger.warning("SECURITY WARNING: stripe_webhook_secret not set - Stripe webhooks will not be verified")
+            # SECURITY: Webhook secrets are required in production when payment is enabled
+            if self.stripe_secret_key and not self.stripe_webhook_secret:
+                errors.append("stripe_webhook_secret is REQUIRED when Stripe is enabled in production")
             
             if not self.razorpay_webhook_secret:
-                logger.warning("SECURITY WARNING: razorpay_webhook_secret not set - Razorpay webhooks will not be verified")
+                warnings_list.append("razorpay_webhook_secret not set - Razorpay webhooks will not be verified")
+            
+            for warning in warnings_list:
+                logger.warning(f"SECURITY WARNING: {warning}")
             
             if errors:
                 raise ValueError(f"Production configuration errors: {'; '.join(errors)}")

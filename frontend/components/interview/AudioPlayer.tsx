@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { API_URL } from '@/lib/api';
 
 interface AudioPlayerProps {
   text: string;
@@ -59,7 +60,7 @@ export default function AudioPlayer({ text, onComplete, autoPlay, onAudioReady }
     const playAudio = async () => {
       try {
         const token = await getTokenRef.current();
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voice/synthesize`, {
+        const response = await fetch(`${API_URL}/voice/synthesize`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

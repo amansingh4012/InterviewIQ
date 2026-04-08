@@ -23,7 +23,23 @@ const securityHeaders = [
   },
   {
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(self), geolocation=()'
+    value: 'camera=(), microphone=(self), geolocation=(), payment=(), usb=()'
+  },
+  // SECURITY: Content Security Policy to prevent XSS
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://clerk.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.clerk.com https://clerk.com wss://*.clerk.com",
+      "frame-src 'self' https://*.clerk.com https://clerk.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ')
   },
 ];
 
@@ -31,7 +47,7 @@ const securityHeaders = [
 if (process.env.NODE_ENV === 'production') {
   securityHeaders.push({
     key: 'Strict-Transport-Security',
-    value: 'max-age=31536000; includeSubDomains'
+    value: 'max-age=63072000; includeSubDomains; preload'
   });
 }
 
@@ -45,6 +61,16 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+    ];
+  },
+  
+  // Proxy API requests to backend
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://127.0.0.1:8000/:path*',
       },
     ];
   },

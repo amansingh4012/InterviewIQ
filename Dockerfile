@@ -48,8 +48,15 @@ COPY --from=frontend-builder /app/frontend/public ./frontend/public
 RUN mkdir -p /var/log/supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# SECURITY: Create non-root user for running the application
+RUN useradd -m -u 1000 -s /bin/bash appuser && \
+    chown -R appuser:appuser /app /var/log/supervisor
+
 # Expose port (Render will set PORT env var)
 EXPOSE 10000
+
+# SECURITY: Run as non-root user
+USER appuser
 
 # Start supervisor which manages both processes
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

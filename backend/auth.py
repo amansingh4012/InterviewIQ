@@ -35,9 +35,10 @@ def _validate_issuer(issuer: str | None) -> bool:
     """Validate that the issuer claim matches expected Clerk pattern."""
     if not issuer:
         return False
-    # Allow localhost for development
-    if settings.is_development and issuer.startswith("https://"):
-        return True
+    # In development, allow any valid Clerk issuer (still requires https and clerk domain)
+    if settings.is_development:
+        # More permissive but still secure: must be HTTPS and contain 'clerk'
+        return issuer.startswith("https://") and "clerk" in issuer.lower()
     return bool(CLERK_ISSUER_PATTERN.match(issuer))
 
 

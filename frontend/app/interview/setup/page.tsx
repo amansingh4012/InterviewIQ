@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useInterviewStore } from '@/store/interviewStore';
-import { uploadResume, startInterview } from '@/lib/api';
+import { uploadResume, startInterview, canStartInterview } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
 
@@ -43,16 +43,10 @@ export default function SetupPage() {
 
   const checkSubscriptionStatus = async () => {
     try {
-      const token = await getToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/can-start`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSubscription(data);
-        if (!data.can_start) {
-          // Don't redirect immediately, show the upgrade prompt
-        }
+      const data = await canStartInterview(() => getToken());
+      setSubscription(data);
+      if (!data.can_start) {
+        // Don't redirect immediately, show the upgrade prompt
       }
     } catch (err) {
       console.error('Failed to check subscription:', err);
