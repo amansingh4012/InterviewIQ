@@ -1,0 +1,34 @@
+# Render Blueprint — Backend only (Frontend deployed on Vercel)
+services:
+  - type: web
+    name: interviewiq-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.6"
+      - key: ENVIRONMENT
+        value: production
+      - key: GROQ_API_KEY
+        sync: false          # Set manually in Render dashboard
+      - key: MONGODB_URL
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: interviewiq
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_JWT_PUBLIC_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false          # Set to your Vercel domain: https://your-app.vercel.app

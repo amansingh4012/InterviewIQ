@@ -62,7 +62,6 @@ function sanitizeErrorMessage(detail: string | undefined, status: number): strin
       /^Session not found$/,
       /^Interview already completed$/,
       /^Report not ready yet$/,
-      /^Invalid subscription tier$/,
       /^Text too long/,
       /^Invalid resume_id format$/,
       /^Invalid session_id format$/,

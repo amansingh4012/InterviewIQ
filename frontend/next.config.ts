@@ -59,7 +59,7 @@ const securityHeaders = [
   },
   {
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(self), geolocation=(), payment=(), usb=()'
+    value: 'camera=(), microphone=(self), geolocation=(), usb=()'
   },
   // SECURITY: Content Security Policy to prevent XSS
   {
@@ -89,10 +89,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: __dirname,
-  },
-
   // Security headers for all routes
   async headers() {
     return [
