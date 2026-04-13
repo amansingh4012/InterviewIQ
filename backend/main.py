@@ -9,7 +9,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from database import create_indexes
-from routes import resume, interview, voice, analytics, evaluation, subscription
+from routes import resume, interview, voice, analytics, evaluation
 from config import settings
 import logging
 import uuid
@@ -86,11 +86,15 @@ app.include_router(interview.router, prefix="/interview", tags=["Interview"])
 app.include_router(evaluation.router, prefix="/evaluate", tags=["Evaluation"])
 app.include_router(voice.router, prefix="/voice", tags=["Voice"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
-app.include_router(subscription.router, prefix="/subscription", tags=["Subscription"])
 
 
 @app.get("/health")
 async def health():
+    return {"status": "ok", "service": "InterviewIQ API"}
+
+
+@app.get("/api/health")
+async def api_health():
     return {"status": "ok", "service": "InterviewIQ API"}
 
 

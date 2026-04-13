@@ -72,11 +72,16 @@ export default function AudioPlayer({ text, onComplete, autoPlay, onAudioReady }
 
         if (!response.ok) throw new Error('Voice synthesis failed');
 
-        const audioBlob = await response.blob();
+        const rawBlob = await response.blob();
+        // Ensure the blob has the correct MIME type from the response
+        const contentType = response.headers.get('content-type') || 'audio/mpeg';
+        const audioBlob = new Blob([rawBlob], { type: contentType });
         const audioUrl = URL.createObjectURL(audioBlob);
         currentUrlRef.current = audioUrl;
 
         if (audioRef.current && !controller.signal.aborted) {
+          // Set the type so the browser knows how to decode the audio
+          audioRef.current.setAttribute('type', contentType);
           audioRef.current.src = audioUrl;
           
           // Wait for audio to be ready before playing

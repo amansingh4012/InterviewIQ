@@ -1,13 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field, field_validator
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from auth import verify_clerk_token
 from services.llm_service import llm_service
 from services.rag_service import rag_service
 from services.analytics_service import analytics_service
 from services.session_service import session_service
-from services.subscription_service import subscription_service
 from database import sessions_collection, resumes_collection
 from datetime import datetime
 import uuid
@@ -20,7 +17,6 @@ logger = logging.getLogger(__name__)
 security_logger = logging.getLogger("security")
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 # UUID validation pattern
 UUID_PATTERN = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
@@ -49,10 +45,20 @@ class StartInterviewRequest(BaseModel):
     @field_validator("difficulty")
     @classmethod
     def validate_difficulty(cls, v: str) -> str:
-        allowed = ["Junior", "Mid-Level", "Senior", "Staff", "Principal"]
-        if v not in allowed:
+        # Normalize common case variations from frontend
+        normalized = {
+            "internship": "Internship",
+            "junior": "Junior",
+            "mid-level": "Mid-Level",
+            "senior": "Senior",
+            "staff": "Staff",
+            "principal": "Principal",
+        }
+        v_lower = v.lower()
+        if v_lower not in normalized:
+            allowed = list(normalized.values())
             raise ValueError(f"difficulty must be one of: {', '.join(allowed)}")
-        return v
+        return normalized[v_lower]
     
     @field_validator("interview_type")
     @classmethod
@@ -88,31 +94,11 @@ class EndInterviewRequest(BaseModel):
 
 
 @router.post("/start")
-@limiter.limit("10/minute")  # Limit interview starts
 async def start_interview(
     request: Request,  # Required for rate limiter
     interview_request: StartInterviewRequest,
     user_id: str = Depends(verify_clerk_token),
 ):
-    # Check subscription status before allowing interview
-    try:
-        sub_status = await subscription_service.check_can_start_interview(user_id)
-        if not sub_status.can_start_interview:
-            raise HTTPException(
-                status_code=403,
-                detail={
-                    "error": "subscription_limit_reached",
-                    "message": sub_status.reason or "Interview limit reached",
-                    "upgrade_prompt": sub_status.upgrade_prompt,
-                    "tier": sub_status.tier.value if hasattr(sub_status.tier, 'value') else sub_status.tier,
-                }
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.warning(f"Subscription check failed, allowing interview: {e}")
-        # Allow interview if subscription service fails (fail open for UX)
-    
     # IDOR Prevention: Always verify user owns the resume
     resume_doc = await resumes_collection.find_one({
         "resume_id": interview_request.resume_id,
@@ -174,7 +160,6 @@ async def start_interview(
 
 
 @router.post("/answer")
-@limiter.limit("20/minute")  # Limit answer submissions
 async def submit_answer(
     request: Request,  # Required for rate limiter
     answer_request: SubmitAnswerRequest,
@@ -350,12 +335,6 @@ async def submit_answer(
             analytics=analytics,
         )
         
-        # Increment interview count for subscription tracking
-        try:
-            await subscription_service.increment_interview_count(user_id)
-        except Exception as e:
-            logger.warning(f"Failed to increment interview count: {e}")
-
         return {
             "status": "complete",
             "message": "Interview completed",
@@ -457,7 +436,7 @@ async def get_report(
             )
             # Persist the successfully regenerated report
             await sessions_collection.update_one(
-                {"session_id": session_id},
+                {"session_id": session_id, "user_id": user_id},  # IDOR fix: include user_id
                 {"$set": {"report": report}}
             )
             logger.info(f"Report regeneration succeeded for session {session_id}")
@@ -465,61 +444,15 @@ async def get_report(
             logger.error(f"Report regeneration still failed for {session_id}: {e}")
             # Return the existing fallback — user can try again later
 
-    # Check subscription tier to determine what report data to return
-    is_premium = False
-    try:
-        sub_status = await subscription_service.get_subscription_status(user_id)
-        tier = sub_status.get("tier", "free") if isinstance(sub_status, dict) else getattr(sub_status, "tier", "free")
-        tier_value = tier.value if hasattr(tier, 'value') else str(tier)
-        is_premium = tier_value in ("premium", "enterprise")
-    except Exception as e:
-        logger.warning(f"Failed to check subscription for report access: {e}")
-        is_premium = False  # Default to restricted if check fails
-    
-    # Build response based on tier
     response = {
         "session_id": session_id,
         "role": session["role"],
         "difficulty": session["difficulty"],
         "completed_at": session.get("completed_at"),
-        "is_premium_report": is_premium,
+        "is_premium_report": True,
+        "report": report,
+        "analytics": session.get("analytics", {}),
     }
-    
-    if is_premium:
-        # Full report for premium/enterprise users
-        response["report"] = report
-        response["analytics"] = session.get("analytics", {})
-    else:
-        # Limited report for free tier users
-        response["report"] = {
-            "overall_score": report.get("overall_score"),
-            "overall_grade": report.get("overall_grade"),
-            "hire_recommendation": report.get("hire_recommendation"),
-            # Truncated feedback
-            "strengths": report.get("strengths", [])[:2],  # Only first 2 strengths
-            "weaknesses": report.get("weaknesses", [])[:1],  # Only first weakness
-            # Premium-only fields shown as locked
-            "category_scores": "🔒 Upgrade to Premium for detailed category breakdown",
-            "question_by_question": "🔒 Upgrade to Premium for question-by-question analysis",
-            "study_recommendations": "🔒 Upgrade to Premium for personalized study plan",
-            "biggest_win": report.get("biggest_win", ""),
-            "most_critical_gap": "🔒 Upgrade to Premium",
-            "one_thing_to_fix_immediately": "🔒 Upgrade to Premium for actionable advice",
-        }
-        response["analytics"] = {
-            "summary": "🔒 Upgrade to Premium for detailed analytics",
-        }
-        response["upgrade_prompt"] = {
-            "message": "Unlock your full interview report with detailed feedback",
-            "features": [
-                "Question-by-question analysis",
-                "Detailed category scores",
-                "Personalized study recommendations",
-                "Progress tracking over time"
-            ],
-            "cta": "Upgrade to Premium",
-            "url": "/pricing"
-        }
     
     return response
 

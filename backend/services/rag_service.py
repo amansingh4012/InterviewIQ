@@ -2,18 +2,15 @@ import PyPDF2
 import io
 import json
 import re
+from collections import Counter
+import math
 from config import settings
 from prompts.resume_parser import RESUME_PARSER_PROMPT
 from services.llm_service import llm_service
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
-
-
 
 class RAGService:
     def __init__(self):
-        # We replace heavy HuggingFace/PyTorch with lightweight regex chunking and TF-IDF
+        # Using lightweight pure python TF-IDF equivalent
         pass
 
     def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
@@ -26,6 +23,9 @@ class RAGService:
                 text += page_text + "\n"
         return text.strip()
 
+    def _tokenize(self, text: str) -> list:
+        return re.findall(r'\w+', text.lower()[:5000])
+
     def create_vector_store(self, resume_text: str) -> dict:
         # Simple manual sentence/paragraph chunker to save memory
         raw_chunks = re.split(r'\n\n|\.\s', resume_text)
@@ -33,29 +33,34 @@ class RAGService:
         if not chunks:
             chunks = [resume_text]
         
-        vectorizer = TfidfVectorizer(stop_words='english')
-        tfidf_matrix = vectorizer.fit_transform(chunks)
-        
-        # Return a dictionary that acts as our lightweight "vector_store"
+        # Tokenize and compute term frequencies
+        chunk_tfs = []
+        for c in chunks:
+            tokens = self._tokenize(c)
+            total = len(tokens) if len(tokens) > 0 else 1
+            freqs = Counter(tokens)
+            chunk_tfs.append({k: v/total for k, v in freqs.items()})
+            
         return {
             "chunks": chunks,
-            "vectorizer": vectorizer,
-            "tfidf_matrix": tfidf_matrix
+            "chunk_tfs": chunk_tfs
         }
 
     def get_relevant_context(self, vector_store: dict, query: str, k: int = 3) -> str:
         chunks = vector_store["chunks"]
-        vectorizer = vector_store["vectorizer"]
-        tfidf_matrix = vector_store["tfidf_matrix"]
-
-        query_vec = vectorizer.transform([query])
-        similarities = cosine_similarity(query_vec, tfidf_matrix).flatten()
+        chunk_tfs = vector_store["chunk_tfs"]
         
-        # Get top k indices
-        top_indices = similarities.argsort()[-k:][::-1]
+        query_tokens = self._tokenize(query)
         
-        # Format the top k chunks
-        relevant_chunks = [chunks[i] for i in top_indices if similarities[i] > 0.05]
+        similarities = []
+        for idx, tf in enumerate(chunk_tfs):
+            score = sum(tf.get(qt, 0) for qt in query_tokens) # simple TF matching
+            similarities.append((score, idx))
+            
+        similarities.sort(reverse=True, key=lambda x: x[0])
+        top_indices = [idx for score, idx in similarities[:k] if score > 0]
+        
+        relevant_chunks = [chunks[i] for i in top_indices]
         return "\n".join(relevant_chunks)
 
     async def parse_resume(self, resume_text: str) -> dict:

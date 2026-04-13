@@ -80,5 +80,5 @@ export interface Report {
 }
 
 export type Role = 'Full Stack Developer' | 'Frontend Developer' | 'Backend Developer' | 'AI/ML Engineer';
-export type Difficulty = 'Internship' | 'Junior' | 'Mid-level' | 'Senior';
+export type Difficulty = 'Internship' | 'Junior' | 'Mid-Level' | 'Senior' | 'Staff' | 'Principal';
 export type InterviewType = 'Technical' | 'Behavioral' | 'Mixed' | 'System Design';

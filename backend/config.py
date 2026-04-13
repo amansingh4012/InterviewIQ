@@ -19,15 +19,6 @@ class Settings(BaseSettings):
     sarvam_api_key: str = ""
     frontend_url: str = "http://localhost:3000"
     
-    # Stripe configuration
-    stripe_secret_key: str = ""
-    stripe_webhook_secret: str = ""
-    stripe_price_premium: str = ""  # price_xxx from Stripe dashboard
-    stripe_price_enterprise: str = ""  # price_xxx from Stripe dashboard
-    
-    # Razorpay configuration (optional)
-    razorpay_webhook_secret: str = ""
-    
     # Environment flag
     environment: str = "development"
     
@@ -81,13 +72,6 @@ class Settings(BaseSettings):
             
             if not self.frontend_url.startswith("https://"):
                 errors.append("frontend_url must use HTTPS in production")
-            
-            # SECURITY: Webhook secrets are required in production when payment is enabled
-            if self.stripe_secret_key and not self.stripe_webhook_secret:
-                errors.append("stripe_webhook_secret is REQUIRED when Stripe is enabled in production")
-            
-            if not self.razorpay_webhook_secret:
-                warnings_list.append("razorpay_webhook_secret not set - Razorpay webhooks will not be verified")
             
             for warning in warnings_list:
                 logger.warning(f"SECURITY WARNING: {warning}")

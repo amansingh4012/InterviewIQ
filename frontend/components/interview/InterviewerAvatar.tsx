@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
 interface InterviewerAvatarProps {
   isThinking?: boolean;
   isListening?: boolean;
@@ -17,16 +15,6 @@ export default function InterviewerAvatar({
   mood = 'neutral',
   size = 'md'
 }: InterviewerAvatarProps) {
-  const [animationFrame, setAnimationFrame] = useState(0);
-
-  // Subtle animation for lifelike feel
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAnimationFrame((prev) => (prev + 1) % 100);
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
-
   const sizeClasses = {
     sm: 'w-12 h-12',
     md: 'w-16 h-16',
@@ -58,10 +46,10 @@ export default function InterviewerAvatar({
     <div className="flex flex-col items-center gap-2">
       {/* Avatar container */}
       <div className={`relative ${sizeClasses[size]}`}>
-        {/* Outer glow ring */}
+        {/* Outer glow ring — CSS animation instead of JS setInterval */}
         <div 
           className={`absolute inset-0 rounded-full bg-gradient-to-br ${moodColors[mood]} opacity-30 blur-md ${pulseClass}`}
-          style={{ transform: `scale(${1.1 + Math.sin(animationFrame / 10) * 0.05})` }}
+          style={{ animation: 'avatar-breathe 4s ease-in-out infinite' }}
         />
         
         {/* Main avatar circle */}
@@ -73,16 +61,17 @@ export default function InterviewerAvatar({
             {isThinking ? '🤔' : isListening ? '👂' : isSpeaking ? '🗣️' : moodEmojis[mood]}
           </span>
           
-          {/* Speaking indicator waves */}
+          {/* Speaking indicator waves — pure CSS animation */}
           {isSpeaking && (
             <div className="absolute -right-1 -bottom-1 flex gap-0.5">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="w-1 bg-white rounded-full animate-pulse"
+                  className="w-1 bg-white rounded-full"
                   style={{
-                    height: `${8 + Math.sin((animationFrame + i * 20) / 5) * 4}px`,
-                    animationDelay: `${i * 0.1}s`
+                    height: '10px',
+                    animation: `avatar-wave 0.8s ease-in-out infinite`,
+                    animationDelay: `${i * 0.15}s`
                   }}
                 />
               ))}

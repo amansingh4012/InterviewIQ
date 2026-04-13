@@ -1,5 +1,41 @@
 import type { NextConfig } from "next";
 
+const isDevelopment = process.env.NODE_ENV === "development";
+
+const connectSrc = [
+  "'self'",
+  "https://*.clerk.com",
+  "https://clerk.com",
+  "https://*.clerk.accounts.dev",
+  "https://clerk.accounts.dev",
+  "wss://*.clerk.com",
+  "wss://*.clerk.accounts.dev",
+];
+
+// Add the API URL to connect-src (production or development)
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+if (apiUrl) {
+  try {
+    const apiOrigin = new URL(apiUrl).origin;
+    if (!connectSrc.includes(apiOrigin)) {
+      connectSrc.push(apiOrigin);
+    }
+  } catch {
+    // Invalid URL, skip
+  }
+}
+
+if (isDevelopment) {
+  connectSrc.push(
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "ws://localhost:3000",
+    "ws://127.0.0.1:3000"
+  );
+}
+
 const securityHeaders = [
   {
     key: 'X-DNS-Prefetch-Control',
@@ -30,12 +66,13 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://clerk.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://clerk.com https://*.clerk.accounts.dev https://clerk.accounts.dev",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.clerk.com https://clerk.com wss://*.clerk.com",
-      "frame-src 'self' https://*.clerk.com https://clerk.com",
+      "media-src 'self' blob:",
+      `connect-src ${connectSrc.join(" ")}`,
+      "frame-src 'self' https://*.clerk.com https://clerk.com https://*.clerk.accounts.dev https://clerk.accounts.dev",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -52,29 +89,16 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker deployment
-  output: 'standalone',
-  
+  turbopack: {
+    root: __dirname,
+  },
+
   // Security headers for all routes
   async headers() {
     return [
       {
         source: '/:path*',
         headers: securityHeaders,
-      },
-    ];
-  },
-  
-  // Proxy API requests to backend
-  async rewrites() {
-    return [
-      {
-        source: '/health',
-        destination: 'http://127.0.0.1:8000/health',
-      },
-      {
-        source: '/api/:path*',
-        destination: 'http://127.0.0.1:8000/:path*',
       },
     ];
   },

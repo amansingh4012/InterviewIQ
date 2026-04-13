@@ -1,13 +1,18 @@
 // Validate API URL configuration
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV === 'production';
 
-// Security: Enforce HTTPS in production (skip during build time for SSG)
-// Allow relative URLs starting with '/' which inherently use the same protocol as the host
-if (!isDevelopment && !isBuildTime && !rawApiUrl.startsWith('https://') && !rawApiUrl.startsWith('/')) {
-  console.error('Security Error: API_URL must use HTTPS in production (or be a relative path)');
-  throw new Error('Invalid API configuration');
+// Security: Warn about non-HTTPS in production (don't throw — SSR pages would crash)
+if (!isDevelopment && !isBuildTime && !rawApiUrl.startsWith('https://')) {
+  if (typeof window !== 'undefined') {
+    // Client-side in production: block non-HTTPS
+    console.error('Security Error: API_URL must use HTTPS in production');
+    throw new Error('Invalid API configuration');
+  } else {
+    // Server-side rendering: warn but don't crash (SSR pages need to render)
+    console.warn('Warning: API_URL is not HTTPS. Ensure HTTPS is enforced in production.');
+  }
 }
 
 export const API_URL = rawApiUrl;
@@ -256,31 +261,6 @@ export async function getProgress(
   const endpoint = `/analytics/progress${queryString ? `?${queryString}` : ''}`;
   
   const res = await authFetch(endpoint, getToken);
-  return res.json();
-}
-
-// ── Subscription ──
-
-export async function getSubscriptionStatus(
-  getToken: () => Promise<string | null>
-) {
-  const res = await authFetch('/subscription/status', getToken);
-  return res.json();
-}
-
-export async function canStartInterview(
-  getToken: () => Promise<string | null>
-) {
-  const res = await authFetch('/subscription/can-start', getToken);
-  return res.json();
-}
-
-export async function getSubscriptionPlans() {
-  // This endpoint is public, no auth needed
-  const res = await fetch(`${API_URL}/subscription/plans`);
-  if (!res.ok) {
-    throw new ApiError('Failed to load subscription plans', res.status);
-  }
   return res.json();
 }
 

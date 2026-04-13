@@ -4,17 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useInterviewStore } from '@/store/interviewStore';
-import { uploadResume, startInterview, canStartInterview } from '@/lib/api';
+import { uploadResume, startInterview } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
-
-interface SubscriptionStatus {
-  can_start: boolean;
-  interviews_remaining: number | null;
-  reason?: string;
-  upgrade_prompt?: string;
-  tier: string;
-}
 
 export default function SetupPage() {
   const router = useRouter();
@@ -34,37 +26,11 @@ export default function SetupPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [step, setStep] = useState<'upload' | 'processing' | 'starting'>('upload');
   const [error, setError] = useState('');
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
-  const [checkingSubscription, setCheckingSubscription] = useState(true);
-
-  useEffect(() => {
-    checkSubscriptionStatus();
-  }, []);
-
-  const checkSubscriptionStatus = async () => {
-    try {
-      const data = await canStartInterview(() => getToken());
-      setSubscription(data);
-      if (!data.can_start) {
-        // Don't redirect immediately, show the upgrade prompt
-      }
-    } catch (err) {
-      console.error('Failed to check subscription:', err);
-    } finally {
-      setCheckingSubscription(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
       setError('Please select a PDF resume');
-      return;
-    }
-    
-    // Double-check subscription before starting
-    if (subscription && !subscription.can_start) {
-      router.push('/pricing');
       return;
     }
 
@@ -97,11 +63,6 @@ export default function SetupPage() {
 
       router.push(`/interview/${startData.session_id}`);
     } catch (err: any) {
-      // Handle subscription limit error specifically
-      if (err.message?.includes('subscription_limit_reached') || err.status === 403) {
-        router.push('/pricing');
-        return;
-      }
       setError(err.message || 'An error occurred');
       setStep('upload');
       setIsUploading(false);
@@ -114,69 +75,12 @@ export default function SetupPage() {
     starting: '🧠 Building personalized interview strategy...',
   };
 
-  // Show loading while checking subscription
-  if (checkingSubscription) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-[var(--accent-indigo)] border-t-transparent animate-spin" />
-          <p className="text-[var(--text-secondary)]">Checking account status...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show upgrade prompt if limit reached
-  if (subscription && !subscription.can_start) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
-        <div className="gradient-orb gradient-orb-1" />
-        <div className="gradient-orb gradient-orb-2" />
-        
-        <div className="w-full max-w-md relative z-10">
-          <div className="glass-card-static p-8 text-center animate-fade-up">
-            <div className="text-6xl mb-4">🔒</div>
-            <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-              Interview Limit Reached
-            </h1>
-            <p className="text-[var(--text-secondary)] mb-6">
-              {subscription.reason || "You've used all your free interviews."}
-            </p>
-            <p className="text-sm text-[var(--text-muted)] mb-6">
-              {subscription.upgrade_prompt || "Upgrade to Premium for more interviews and full reports."}
-            </p>
-            <div className="flex flex-col gap-3">
-              <Link href="/pricing">
-                <Button className="w-full">
-                  ⚡ View Plans & Upgrade
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="outline" className="w-full">
-                  ← Back to Dashboard
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
       <div className="gradient-orb gradient-orb-1" />
       <div className="gradient-orb gradient-orb-2" />
 
       <div className="w-full max-w-lg relative z-10">
-        {/* Subscription Status Banner */}
-        {subscription && subscription.interviews_remaining !== null && subscription.interviews_remaining <= 5 && (
-          <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm text-center animate-fade-up">
-            ⚠️ {subscription.interviews_remaining} interview{subscription.interviews_remaining !== 1 ? 's' : ''} remaining on your plan.{' '}
-            <Link href="/pricing" className="underline font-medium">Upgrade now</Link>
-          </div>
-        )}
-
         {/* Header */}
         <div className="text-center mb-8 animate-fade-up">
           <h1 className="text-3xl font-bold text-[var(--text-primary)]">Setup Interview</h1>
@@ -251,7 +155,7 @@ export default function SetupPage() {
                   Difficulty
                 </label>
                 <div className="grid grid-cols-4 gap-2">
-                  {['Internship', 'Junior', 'Mid-level', 'Senior'].map((d) => (
+                  {['Internship', 'Junior', 'Mid-Level', 'Senior'].map((d) => (
                     <button
                       key={d}
                       type="button"

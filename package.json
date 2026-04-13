@@ -1,19 +1,18 @@
 {
-  "name": "interviewiq-monorepo",
+  "name": "interviewiq",
   "version": "1.0.0",
-  "description": "AI-Powered Mock Interview Platform",
+  "private": true,
   "scripts": {
-    "install:all": "cd frontend && npm install",
-    "build": "cd frontend && npm run build",
-    "start": "concurrently --kill-others \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000",
-    "start:frontend": "cd frontend && npm run start -- -p ${PORT:-3000}",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
-    "dev:frontend": "cd frontend && npm run dev"
-  },
-  "dependencies": {
-    "concurrently": "^8.2.2"
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && pip install -r requirements.txt",
+    "install:all": "npm run install:frontend && npm run install:backend",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && uvicorn main:app --reload --reload-dir . --reload-exclude \"venv/*\" --reload-exclude \"__pycache__/*\" --port 8000 --host 127.0.0.1",
+    "dev": "echo \"Run 'npm run dev:frontend' and 'npm run dev:backend' in separate terminals\"",
+    "build:frontend": "cd frontend && npm run build",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && uvicorn main:app --host 0.0.0.0 --port 8000",
+    "start": "echo \"Run 'npm run start:backend' and 'npm run start:frontend' in separate terminals\""
   },
   "engines": {
     "node": ">=18.0.0"

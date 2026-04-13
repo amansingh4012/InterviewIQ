@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class SessionCreate(BaseModel):
@@ -28,7 +28,7 @@ class SessionDocument(BaseModel):
     status: str = "active"  # active | generating_report | completed
     report: Optional[Dict[str, Any]] = None
     analytics: Optional[Dict[str, Any]] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
 
 

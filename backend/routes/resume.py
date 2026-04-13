@@ -1,6 +1,4 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from auth import verify_clerk_token
 from services.rag_service import rag_service
 from database import resumes_collection
@@ -12,7 +10,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 PDF_MAGIC_BYTES = b'%PDF'
@@ -42,7 +39,6 @@ def validate_pdf_content(pdf_bytes: bytes) -> bool:
 
 
 @router.post("/upload")
-@limiter.limit("5/minute")  # Limit file uploads to 5 per minute
 async def upload_resume(
     request: Request,  # Required for rate limiter
     file: UploadFile = File(...),

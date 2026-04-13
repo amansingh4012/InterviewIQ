@@ -1,8 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, field_validator
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from auth import verify_clerk_token
 from services.elevenlabs_service import elevenlabs_service
 from services.sarvam_service import sarvam_service
@@ -11,7 +9,6 @@ import re
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-limiter = Limiter(key_func=get_remote_address)
 
 # Disallow potentially dangerous patterns in text
 DANGEROUS_PATTERNS = re.compile(r'[<>{}\\]|javascript:|data:|vbscript:', re.I)
@@ -35,7 +32,6 @@ class SynthesizeRequest(BaseModel):
 
 
 @router.post("/synthesize")
-@limiter.limit("30/minute")  # Limit TTS requests to prevent API quota abuse
 async def synthesize_speech(
     request: Request,  # Required for rate limiter
     synth_request: SynthesizeRequest,

@@ -28,6 +28,6 @@ class ElevenLabsService:
             if response.status_code == 200:
                 return response.content
             else:
-                raise Exception(f"ElevenLabs error: {response.status_code} - {response.text}")
+                raise Exception(f"ElevenLabs TTS failed with status {response.status_code}")
 
 elevenlabs_service = ElevenLabsService()

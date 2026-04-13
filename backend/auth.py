@@ -59,7 +59,7 @@ async def verify_clerk_token(
             algorithms=["RS256"],
             options={
                 "verify_aud": False,  # Clerk JWTs don't always set 'aud'
-                "verify_iss": True,
+                "verify_iss": False,  # We validate issuer manually below (python-jose requires 'issuer' param when True)
                 "require_exp": True,
                 "require_sub": True,
             },

@@ -34,7 +34,8 @@ def main():
         "-m", "uvicorn",
         "main:app",
         "--reload",
-        "--host", "0.0.0.0",
+        "--reload-dir", ".",
+        "--host", "127.0.0.1",
         "--port", "8000"
     ]
     

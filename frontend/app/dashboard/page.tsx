@@ -1,24 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth, useUser, UserButton } from '@clerk/nextjs';
-import { getUserSessions, canStartInterview } from '@/lib/api';
+import { getUserSessions } from '@/lib/api';
 import SessionCard from '@/components/dashboard/SessionCard';
 import Button from '@/components/ui/Button';
 import { formatScore } from '@/lib/utils';
 import Link from 'next/link';
 
-interface SubscriptionStatus {
-  tier: string;
-  interviews_remaining: number | null;
-  can_start: boolean;
-  upgrade_prompt?: string;
-}
-
 function DashboardContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useUser();
   const { getToken } = useAuth();
   const getTokenRef = useRef(getToken);
@@ -26,22 +18,13 @@ function DashboardContent() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
-  
-  // Check for payment success
-  const paymentSuccess = searchParams.get('payment') === 'success';
-  const newTier = searchParams.get('tier');
 
   useEffect(() => {
     const fetchData = async () => {
       setError(null);
       try {
-        const [sessionsData, subStatus] = await Promise.all([
-          getUserSessions(() => getTokenRef.current()),
-          fetchSubscriptionStatus(),
-        ]);
+        const sessionsData = await getUserSessions(() => getTokenRef.current());
         setSessions(sessionsData.sessions || []);
-        setSubscription(subStatus);
       } catch (err: any) {
         console.error(err);
         setError(err.message || 'Failed to load dashboard data. Please refresh the page.');
@@ -51,15 +34,6 @@ function DashboardContent() {
     };
     fetchData();
   }, []);
-
-  const fetchSubscriptionStatus = async (): Promise<SubscriptionStatus | null> => {
-    try {
-      return await canStartInterview(() => getTokenRef.current());
-    } catch (err) {
-      console.error('Failed to fetch subscription:', err);
-    }
-    return null;
-  };
 
   const avgScore =
     sessions.length > 0
@@ -72,22 +46,7 @@ function DashboardContent() {
       : 0;
   
   const handleStartInterview = () => {
-    if (subscription && !subscription.can_start) {
-      router.push('/pricing');
-    } else {
-      router.push('/interview/setup');
-    }
-  };
-
-  const getTierBadgeColor = (tier: string) => {
-    switch (tier?.toLowerCase()) {
-      case 'premium':
-        return 'bg-blue-500 text-white';
-      case 'enterprise':
-        return 'bg-purple-500 text-white';
-      default:
-        return 'bg-gray-200 text-gray-700';
-    }
+    router.push('/interview/setup');
   };
 
   return (
@@ -114,18 +73,6 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Payment Success Banner */}
-        {paymentSuccess && (
-          <div className="glass-card-static p-4 bg-green-50 border-green-200 animate-fade-up">
-            <div className="flex items-center justify-center gap-2 text-green-800">
-              <span className="text-2xl">🎉</span>
-              <span className="font-medium">
-                Payment successful! Welcome to {newTier || 'Premium'}. Your subscription is now active.
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Header */}
         <div className="glass-card-static p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 animate-fade-up">
           <div className="flex items-center gap-4">
@@ -139,11 +86,6 @@ function DashboardContent() {
                 <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)]">
                   Welcome back, {user?.firstName || 'Candidate'}
                 </h1>
-                {subscription && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getTierBadgeColor(subscription.tier)}`}>
-                    {subscription.tier?.charAt(0).toUpperCase() + subscription.tier?.slice(1) || 'Free'}
-                  </span>
-                )}
               </div>
               <p className="text-[var(--text-secondary)] text-sm mt-1">
                 Ready for your next mock interview?
@@ -151,56 +93,14 @@ function DashboardContent() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {subscription?.tier === 'free' && (
-              <Link href="/pricing">
-                <Button variant="outline" className="shrink-0">
-                  ⚡ Upgrade
-                </Button>
-              </Link>
-            )}
             <Button 
               onClick={handleStartInterview} 
               className="shrink-0"
-              disabled={subscription ? !subscription.can_start : undefined}
             >
               🚀 Start New Interview
             </Button>
           </div>
         </div>
-
-        {/* Subscription Status Card */}
-        {subscription && (
-          <div className="glass-card-static p-4 animate-fade-up delay-50">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-6">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-                    Interviews Remaining
-                  </p>
-                  <p className="text-2xl font-bold text-[var(--text-primary)]">
-                    {subscription.interviews_remaining === null ? '∞ Unlimited' : subscription.interviews_remaining}
-                  </p>
-                </div>
-                {subscription.tier === 'free' && subscription.interviews_remaining !== null && subscription.interviews_remaining <= 3 && (
-                  <div className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
-                    ⚠️ Running low on interviews!{' '}
-                    <Link href="/pricing" className="underline font-medium">
-                      Upgrade now
-                    </Link>
-                  </div>
-                )}
-              </div>
-              {!subscription.can_start && (
-                <div className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg">
-                  {subscription.upgrade_prompt || 'You\'ve reached your interview limit.'}{' '}
-                  <Link href="/pricing" className="underline font-medium">
-                    Upgrade to continue
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-up delay-100">

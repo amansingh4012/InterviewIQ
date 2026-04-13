@@ -22,10 +22,8 @@
   - [Installation](#installation)
   - [Environment Variables](#environment-variables)
   - [Running Locally](#running-locally)
-  - [Running with Docker](#running-with-docker)
 - [API Reference](#-api-reference)
 - [Screenshots / Demo](#-screenshots--demo)
-- [Deployment Guide](#-deployment-guide)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Contact / Author](#-contact--author)
@@ -225,14 +223,6 @@ Configure the following in `frontend/.env.local` and `backend/.env`.
    # Runs API on http://localhost:8000
    ```
 
-### Running with Docker
-*(Coming soon)*
-```bash
-docker-compose up --build
-```
-
----
-
 ## 🔌 API Reference
 
 | Method | Endpoint | Description | Auth Required |
@@ -243,62 +233,6 @@ docker-compose up --build
 | `GET` | `/api/interview/question` | Returns a contextual question with audio | Yes |
 | `POST` | `/api/interview/evaluate` | Evaluates given candidate answer | Yes |
 
-
-## ☁️ Deployment Guide
-
-### Render (Unified Deployment - Recommended)
-
-This project is configured for unified deployment on Render using Docker:
-
-1. **Push your repository to GitHub**
-
-2. **Create a new Web Service on Render:**
-   - Go to [Render Dashboard](https://dashboard.render.com/)
-   - Click "New" → "Web Service"
-   - Connect your GitHub repository
-
-3. **Configure the service:**
-   - **Environment:** Docker
-   - **Dockerfile Path:** `./Dockerfile`
-   - **Instance Type:** Free tier works, but Starter ($7/mo) recommended for production
-
-4. **Add Environment Variables:**
-   ```
-   # Backend
-   GROQ_API_KEY=your_groq_api_key
-   MONGODB_URL=mongodb+srv://...
-   MONGODB_DB_NAME=interviewiq
-   CLERK_SECRET_KEY=sk_...
-   CLERK_JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----...
-   ELEVENLABS_API_KEY=your_elevenlabs_key
-   ELEVENLABS_VOICE_ID=your_voice_id
-   ENVIRONMENT=production
-   FRONTEND_URL=https://your-app.onrender.com
-   
-   # Frontend (prefix with NEXT_PUBLIC_ for client-side)
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
-   NEXT_PUBLIC_API_URL=https://your-app.onrender.com
-   ```
-
-5. **Deploy:** Click "Create Web Service" and Render will build and deploy automatically.
-
-> **Note:** The first deploy may take 10-15 minutes as it builds both the frontend and backend.
-
-### Alternative: Separate Deployments
-
-#### Vercel (Frontend)
-1. Push your repository to GitHub.
-2. Link the repository to your Vercel account.
-3. Configure the `Build Command` as `npm run build` and root directory as `frontend`.
-4. Ensure all environment variables are added under project settings.
-
-#### Render / Railway (Backend)
-1. Create a Web Service instance.
-2. Link the GitHub repository and set the root directory to `backend`.
-3. Set Start Command to `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-4. Add your `.env` configuration in the dashboard.
-
----
 
 ## 🤝 Contributing
 Contributions make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
