@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://img.icons8.com/3d-fluency/94/interview.png" alt="InterviewIQ Logo" width="80" />
+  
 
   # 🎯 InterviewIQ
 
